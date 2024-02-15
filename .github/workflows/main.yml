@@ -28,5 +28,5 @@ jobs:
       with:
           upload_url: ${{ steps.create-new-release.outputs.upload_url }}
           asset_path: /home/runner/work/nife-release
-          asset_name: nife-release
+          asset_name: nifectl-*
           asset_content_type: application/octet-stream

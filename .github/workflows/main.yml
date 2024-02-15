@@ -16,7 +16,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: nifectl-v1.0.102-windows-386.zip
-          path: github.workspace
+          path: './dist'
       - name: Display structure of downloaded files
         run: ls -R
       - name: Extract tag name from release event

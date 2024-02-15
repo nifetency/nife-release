@@ -12,6 +12,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
     - name: Display structure of downloaded files
       run: pwd
+     
     - name: Create Release
       id: create-new-release
       uses: actions/create-release@v1
@@ -20,8 +21,11 @@ jobs:
       with:
           tag_name: ${{ github.run_number}}
           release_name: Release ${{ github.run_number }}
-    - name: Upload artifacts to nife-release
-      uses: actions/upload-artifact@v2
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
       with:
-
-          path: /home/runner/work/nife-release/nife-release
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: /home/runner/nife-release/nife-release
+          asset_content_type: application/octet-stream

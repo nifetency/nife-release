@@ -13,9 +13,10 @@ jobs:
           ref: amruta
           token: ${{ secrets.DEV_TOKEN }}
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
-          name: nifectl-v1.0.102
+          name: nifectl-v1.0.102-windows-386.zip
+          path: /home/runner/work/nifectl/nifectl
       - name: Display structure of downloaded files
         run: ls -R
       - name: Extract tag name from release event

@@ -8,7 +8,7 @@ jobs:
     steps:
     - name: Download artifact
       id: Download-artifacts
-      uses: dawidd6/action-download-artifact@v2
+      uses: dawidd6/action-download-artifact@v3
       with:
           
           repo: nifetency/nifectl 

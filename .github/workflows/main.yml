@@ -15,7 +15,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
-          name: nifectl-v1.0.102-windows-386.zip
+          name: nifectl-v1.0.102
       - name: Display structure of downloaded files
         run: ls -R
       - name: Extract tag name from release event

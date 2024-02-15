@@ -16,7 +16,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: nifectl-artifacts
-        path: < https://github.com/nifetency/nifectl/releases/tag/v1.0.102 >
+        path: nifetency/nifectl/releases
     - name: Extract tag name from release event
       id: extract-tag
       run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"

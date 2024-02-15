@@ -12,9 +12,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
     - name: Display structure of downloaded files
       run: ls -R
-    - name: Extract tag name from release event
-      id: extract-tag
-      run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"
     - name: Upload artifacts to nife-release
       uses: actions/upload-artifact@v2
       with:

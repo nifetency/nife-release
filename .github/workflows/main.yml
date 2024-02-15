@@ -1,27 +1,31 @@
 name: Upload Artifacts to Nife Release
 on:
   workflow_dispatch:
-    
+
 jobs:
   upload-artifacts:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout nifectl repository
-      uses: actions/checkout@v2
-      with:
-        repository: nifetency/nifectl
-        ref: amruta
-        token: ${{ secrets.DEV_TOKEN }}
-    - name: Download nifectl artifacts
-      uses: actions/download-artifact@v2
-      with:
-        name: nifectl-v1.0.102-darwin-amd64.tar.gz
-        path: /home/runner/work/nifectl/nifectl
-    - name: Extract tag name from release event
-      id: extract-tag
-      run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"
-    - name: Upload artifacts to nife-release
-      uses: actions/upload-artifact@v2
-      with:
-        name: nife-release-artifacts-${{ steps.extract-tag.outputs.tag_name }}
-        path: /home/runner/work/niferelease/niferelease
+      - name: Checkout nifectl repository
+        uses: actions/checkout@v2
+        with:
+          repository: nifetency/nifectl
+          ref: amruta
+          token: ${{ secrets.DEV_TOKEN }}
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          name: nifectl-v1.0.102-darwin-amd64.tar.gz
+          repo: nifetency/nifectl
+          workflow: github-actions-demo.yml
+          path: /home/runner/work/nifectl/nifectl
+          search_artifacts: true
+      - name: Extract tag name from release event
+        id: extract-tag
+        run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"
+      - name: Upload artifacts to nife-release
+        uses: actions/upload-artifact@v2
+        with:
+          name: nife-release-artifacts-${{ steps.extract-tag.outputs.tag_name }}
+          path: /home/runner/work/niferelease/niferelease

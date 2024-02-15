@@ -15,7 +15,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: nifectl-v1.0.102-windows-386.zip
+          name: nifectl-v1.0.103-windows-386.zip
           path: './dist'
       - name: Display structure of downloaded files
         run: ls -R

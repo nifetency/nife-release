@@ -11,6 +11,7 @@ jobs:
       with:
         repository: nifetencye/nifectl
         ref: amruta
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Download nifectl artifacts
       uses: actions/download-artifact@v2
       with:

@@ -1,0 +1,27 @@
+name: Upload Artifacts to Nife Release
+on:
+  release:
+    types:
+      - published
+jobs:
+  upload-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout nifectl repository
+      uses: actions/checkout@v2
+      with:
+        repository: nifetencye/nifectl
+        ref: amruta
+    - name: Download nifectl artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: nifectl-artifacts
+        path: /home/runner/work/nifectl/nifectl
+    - name: Extract tag name from release event
+      id: extract-tag
+      run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"
+    - name: Upload artifacts to nife-release
+      uses: actions/upload-artifact@v2
+      with:
+        name: nife-release-artifacts-${{ steps.extract-tag.outputs.tag_name }}
+        path: /home/runner/work/niferelease/niferelease

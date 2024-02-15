@@ -10,7 +10,7 @@ jobs:
       id: Download-artifacts
       uses: dawidd6/action-download-artifact@v2
       with:
-          name: production-files
+          
           repo: nifetency/nifectl 
           search_artifacts: false
           github_token: ${{ secrets.DEV_TOKEN }}

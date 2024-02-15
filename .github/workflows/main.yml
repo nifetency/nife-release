@@ -9,7 +9,7 @@ jobs:
     - name: Checkout nifectl repository
       uses: actions/checkout@v2
       with:
-        repository: amunife/nifectl
+        repository: nifetency/nifectl
         ref: amruta
         token: ${{ secrets.DEV_TOKEN }}
     - name: Download nifectl artifacts

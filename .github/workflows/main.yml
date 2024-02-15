@@ -1,8 +1,7 @@
 name: Upload Artifacts to Nife Release
 on:
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    
 jobs:
   upload-artifacts:
     runs-on: ubuntu-latest

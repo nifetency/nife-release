@@ -15,5 +15,5 @@ jobs:
     - name: Upload artifacts to nife-release
       uses: actions/upload-artifact@v2
       with:
-          name: nife-release-artifacts-${{ steps.extract-tag.outputs.tag_name }}
-          path: /home/runner/work/niferelease/niferelease
+
+          path: /home/runner/work/nife-release/nife-release

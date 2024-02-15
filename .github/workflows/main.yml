@@ -7,20 +7,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download artifact
-        id:
-        uses: dawidd6/action-download-artifact@v2
-        with:
+      id: Download-artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
           name: production-files
           repo: nifetency/nifectl 
           search_artifacts: false
           github_token: ${{ secrets.DEV_TOKEN }}
-      - name: Display structure of downloaded files
-        run: ls -R
-      - name: Extract tag name from release event
-        id: extract-tag
-        run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"
-      - name: Upload artifacts to nife-release
-        uses: actions/upload-artifact@v2
-        with:
+    - name: Display structure of downloaded files
+      run: ls -R
+    - name: Extract tag name from release event
+      id: extract-tag
+      run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"
+    - name: Upload artifacts to nife-release
+      uses: actions/upload-artifact@v2
+      with:
           name: nife-release-artifacts-${{ steps.extract-tag.outputs.tag_name }}
           path: /home/runner/work/niferelease/niferelease

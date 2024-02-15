@@ -15,8 +15,8 @@ jobs:
     - name: Download nifectl artifacts
       uses: actions/download-artifact@v2
       with:
-        name: nifectl-artifacts
-        path: /home/runner/work/nifectl/release/nifectl-v1.0.102-darwin-amd64.tar.gz
+        name: nifectl-v1.0.102-darwin-amd64.tar.gz
+        path: /home/runner/work/nifectl/nifectl
     - name: Extract tag name from release event
       id: extract-tag
       run: echo "::set-output name=tag_name::${{ github.event.release.tag_name }}"

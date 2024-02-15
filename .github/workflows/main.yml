@@ -6,15 +6,10 @@ jobs:
   upload-artifacts:
     runs-on: ubuntu-latest
     steps:
-    - name: Download artifact
-      id: Download-artifacts
-      uses: dawidd6/action-download-artifact@v3
-      with:
-          
-          repo: nifetency/nifectl 
-          search_artifacts: false
-          path: Github.workspace
-          github_token: ${{ secrets.DEV_TOKEN }}
+    - name: Fetch asset
+      run: gh release download --repo nifetency/nifectl v1.0.104
+      env:
+          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
     - name: Display structure of downloaded files
       run: ls -R
     - name: Extract tag name from release event

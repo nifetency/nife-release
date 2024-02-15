@@ -13,7 +13,7 @@ jobs:
           
           repo: nifetency/nifectl 
           search_artifacts: false
-          path: ./artifacts
+          path: Github.workspace
           github_token: ${{ secrets.DEV_TOKEN }}
     - name: Display structure of downloaded files
       run: ls -R

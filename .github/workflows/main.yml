@@ -1,3 +1,4 @@
+
 name: Upload Artifacts to Nife Release
 on:
   workflow_dispatch:
@@ -21,13 +22,12 @@ jobs:
       with:
           tag_name: ${{ github.run_number}}
           release_name: Release ${{ github.run_number }}
-    - name: Install hub
-      run: |
-           sudo apt-get update
-           sudo apt-get install hub
     - name: Upload Release Asset
-      run: |
-          set -x
-          hub release edit -a nifectl-v1.0.104.tar.gz ${{ steps.create-new-release.outputs.upload_url }}
+      uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
+      with:
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: ./nifectl-v1.0.104-darwin-amd64.tar.gz.md5
+          asset_name: nifectl-v1.0.104-darwin-amd64.tar.gz.md5
+          asset_content_type: application/octet-stream

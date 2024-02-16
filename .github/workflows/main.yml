@@ -23,20 +23,19 @@ jobs:
           tag_name: ${{ github.run_number}}
           release_name: Release ${{ github.run_number }}
     - name: Upload Release Asset
+      id: upload-assets
       uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
       with:
-          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
-          asset_path: ./nifectl-v1.0.104-darwin-amd64.tar.gz.md5
-          asset_name: nifectl-v1.0.104-darwin-amd64.tar.gz.md5
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: |
+            ./nifectl-v1.0.104-darwin-amd64.tar.gz
+            ./nifectl-v1.0.104-windows-386.zip.md5
+            ./nifectl-v1.0.104-windows-amd64.zip
+          asset_name: |
+            nifectl-v1.0.104-darwin-amd64.tar.gz
+            nifectl-v1.0.104-windows-386.zip.md5
+            nifectl-v1.0.104-windows-amd64.zip
           asset_content_type: application/octet-stream
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
       env:
-          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
-      with:
-          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
-          asset_path: ./nifectl-v1.0.104-linux-386.tar.gz
-          asset_name: nifectl-v1.0.104-linux-386.tar.gz
-          asset_content_type: application/octet-stream
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    

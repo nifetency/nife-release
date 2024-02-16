@@ -23,10 +23,9 @@ jobs:
           tag_name: ${{ github.run_number}}
           release_name: Release ${{ github.run_number }}
     - name: Upload Release Asset
-      id: upload-assets
       uses: actions/upload-release-asset@v1
       with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
           asset_path: |
             ./nifectl-v1.0.104-darwin-amd64.tar.gz
             ./nifectl-v1.0.104-windows-386.zip.md5

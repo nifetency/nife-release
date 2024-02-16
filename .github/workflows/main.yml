@@ -25,14 +25,9 @@ jobs:
       run: |
            sudo apt-get update
            sudo apt-get install hub
-    - name: Upload Release Asset   
-    - run: |
-        set -x
-        assets=()
-        for asset in ./*.md; do
-          assets+=("-a" "$asset")
-        done
-        tag_name="${GITHUB_REF##*/}"
-        hub release create "${assets[@]}" -m "$tag_name" "$tag_name"
+    - name: Upload Release Asset
+      run: |
+          set -x
+          hub release edit -a nifectl-v1.0.104.tar.gz ${{ steps.create-new-release.outputs.upload_url }}
       env:
-        GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}

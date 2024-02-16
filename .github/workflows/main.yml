@@ -27,9 +27,9 @@ jobs:
       with:
           upload_url: ${{ steps.create-new-release.outputs.upload_url }}
           asset_path: |
-            ./nife-release/nifectl-v1.0.104-darwin-amd64.tar.gz
-            ./nife-release/nifectl-v1.0.104-windows-386.zip.md5
-            ./nife-release/nifectl-v1.0.104-windows-amd64.zip
+            /nife-release/nifectl-v1.0.104-darwin-amd64.tar.gz
+            /nife-release/nifectl-v1.0.104-windows-386.zip.md5
+            /nife-release/nifectl-v1.0.104-windows-amd64.zip
           asset_name: |
             nifectl-v1.0.104-darwin-amd64.tar.gz
             nifectl-v1.0.104-windows-386.zip.md5

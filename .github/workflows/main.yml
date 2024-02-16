@@ -25,8 +25,7 @@ jobs:
       run: |
            sudo apt-get update
            sudo apt-get install hub
-    - name: Upload Release Asset
-    - uses: actions/checkout@v2
+    - name: Upload Release Asset   
     - run: |
         set -x
         assets=()

@@ -27,7 +27,7 @@ jobs:
            sudo apt-get install hub
     - name: Upload Release Asset
       env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
       run: |
           tag_name="${GITHUB_REF##*/}"
           hub release edit $(find ./release -type f -printf "-a %p ") -m "" "$tag_name"

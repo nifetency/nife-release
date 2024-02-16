@@ -22,14 +22,11 @@ jobs:
           tag_name: ${{ github.run_number}}
           release_name: Release ${{ github.run_number }}
     - name: Upload Release Asset
-      uses: actions/checkout@v2
-    - run: |
-        set -x
-        assets=()
-        for asset in ./*.md; do
-          assets+=("-a" "$asset")
-        done
-        tag_name="${GITHUB_REF##*/}"
-        hub release create "${assets[@]}" -m "$tag_name" "$tag_name"
+      uses: actions/upload-release-asset@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEV_TOKEN }}
+      with:
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: ./"nifectl-v1.0.104-darwin-amd64.tar.gz" | "nifectl-v1.0.104-darwin-amd64.tar.gz.md5"
+          asset_name: nifectl-v1.0.104-darwin-amd64.tar.gz | nifectl-v1.0.104-darwin-amd64.tar.gz.md5
+          asset_content_type: application/octet-stream

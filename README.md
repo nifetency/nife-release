@@ -52,7 +52,7 @@ After installation, you can use the Nife CLI to manage your launchnife.io applic
 - **Open a Deployed Web Application**:
     ```sh
     nifectl open
-    ````
+    ```
 
 ### Full Command List
 
@@ -89,6 +89,7 @@ Available Commands:
     suspend: Suspend an application
     version: Show version information for the Nife CLI
     workload: Commands for managing Nife workload management
+```
 
 ### Documentation
 

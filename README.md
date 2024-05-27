@@ -90,7 +90,7 @@ Available Commands:
     version: Show version information for the Nife CLI
     workload: Commands for managing Nife workload management
 
-Documentation
+### Documentation
 
 For detailed documentation, visit the [Nife Documentation](https://docs.nife.io/docs/CLI/help) .
 

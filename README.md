@@ -39,7 +39,7 @@ If you use Homebrew, you can install the Nife CLI with the following commands:
 
 ## Usage
 
-After installation, you can use the Nife CLI to manage your Nife.io applications. Here are some common commands:
+After installation, you can use the Nife CLI to manage your launchnife.io applications. Here are some common commands:
 
 - **Initialize an App**:
     ```sh
@@ -92,6 +92,6 @@ Available Commands:
 
 Documentation
 
-For detailed documentation, visit the [Nife Documentation](https://docs.nife.io/docs/CLI/help).
+For detailed documentation, visit the [Nife Documentation](https://docs.nife.io/docs/CLI/help) .
 
 If you encounter any issues or have questions, please open an issue on the GitHub issues page or contact our support team at hello@nife.io.

@@ -1,0 +1,101 @@
+name: Release Automation
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-homebrew-tap:
+    name: Update Homebrew Tap Formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release info
+        id: release
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          # Strip leading 'v' if present
+          VERSION_CLEAN="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_clean=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
+
+      - name: Download release binary and compute SHA256
+        id: sha
+        run: |
+          # Adjust the asset filename pattern to match your actual release asset
+          ASSET_URL="https://github.com/${{ github.repository }}/releases/download/${{ steps.release.outputs.version }}/nifectl_${{ steps.release.outputs.version_clean }}_darwin_amd64.tar.gz"
+          curl -sL "$ASSET_URL" -o nifectl.tar.gz
+          SHA256=$(sha256sum nifectl.tar.gz | awk '{print $1}')
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "asset_url=${ASSET_URL}" >> $GITHUB_OUTPUT
+
+      - name: Checkout Homebrew tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: nifetency/homebrew-tap   # 🔧 Replace with your Homebrew tap repo
+          token: ${{ secrets.RELEASE_PAT }}
+          path: homebrew-tap
+
+      - name: Update Homebrew formula
+        run: |
+          FORMULA="homebrew-tap/Formula/nifectl.rb"   # 🔧 Adjust path to your formula file
+
+          # Update version and sha256 and url in the formula
+          sed -i 's|url ".*"|url "${{ steps.sha.outputs.asset_url }}"|' "$FORMULA"
+          sed -i 's|sha256 ".*"|sha256 "${{ steps.sha.outputs.sha256 }}"|' "$FORMULA"
+          sed -i 's|version ".*"|version "${{ steps.release.outputs.version_clean }}"|' "$FORMULA"
+
+      - name: Commit and push Homebrew formula update
+        working-directory: homebrew-tap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/nifectl.rb
+          git commit -m "chore: update nifectl to ${{ steps.release.outputs.version }}"
+          git push
+
+  update-nife-io:
+    name: Update nife.io Release Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release info
+        id: release
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION_CLEAN="${VERSION#v}"
+          RELEASE_DATE=$(date -u +"%Y-%m-%d")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_clean=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
+          echo "release_date=${RELEASE_DATE}" >> $GITHUB_OUTPUT
+
+      - name: Checkout nife.io repo
+        uses: actions/checkout@v4
+        with:
+          repository: nifetency/nife.io   # 🔧 Replace with your nife.io repo
+          token: ${{ secrets.RELEASE_PAT }}
+          path: nife-io
+
+      - name: Update release config/index file
+        run: |
+          CONFIG_FILE="nife-io/releases/index.json"   # 🔧 Adjust path to your release config file
+
+          # Update the config file with the latest version info
+          # This assumes a JSON file — adjust the structure to match yours
+          cat > "$CONFIG_FILE" <<EOF
+          {
+            "latest": "${{ steps.release.outputs.version_clean }}",
+            "version": "${{ steps.release.outputs.version_clean }}",
+            "tag": "${{ steps.release.outputs.version }}",
+            "release_date": "${{ steps.release.outputs.release_date }}",
+            "release_url": "https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.version }}",
+            "changelog": "${{ github.event.release.html_url }}"
+          }
+          EOF
+
+      - name: Commit and push nife.io release config update
+        working-directory: nife-io
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add releases/index.json
+          git commit -m "chore: update nifectl release to ${{ steps.release.outputs.version }}"
+          git push

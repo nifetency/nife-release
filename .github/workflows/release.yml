@@ -44,14 +44,15 @@ jobs:
           sed -i 's|sha256 ".*"|sha256 "${{ steps.sha.outputs.sha256 }}"|' "$FORMULA"
           sed -i 's|version ".*"|version "${{ steps.release.outputs.version_clean }}"|' "$FORMULA"
 
-      - name: Commit and push Homebrew formula update
-        working-directory: homebrew-tap
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/nifectl.rb
-          git commit -m "chore: update nifectl to ${{ steps.release.outputs.version }}"
-          git push
+      - name: Create Pull Request for Homebrew update
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.RELEASE_PAT }}
+          path: homebrew-tap
+          commit-message: "chore: update nifectl to ${{ steps.release.outputs.version }}"
+          branch: update-nifectl-${{ steps.release.outputs.version }}
+          title: "Update nifectl to ${{ steps.release.outputs.version }}"
+          body: "Automated update of Homebrew formula"
 
   update-nife-io:
     name: Update nife.io Release Config
@@ -76,10 +77,11 @@ jobs:
 
       - name: Update release config/index file
         run: |
-          CONFIG_FILE="nife-io/releases/index.json"   # 🔧 Adjust path to your release config file
+          CONFIG_FILE="nife-io/releases/index.json"
 
-          # Update the config file with the latest version info
-          # This assumes a JSON file — adjust the structure to match yours
+          # ✅ Ensure directory exists
+          mkdir -p nife-io/releases
+
           cat > "$CONFIG_FILE" <<EOF
           {
             "latest": "${{ steps.release.outputs.version_clean }}",

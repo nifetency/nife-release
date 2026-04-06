@@ -13,47 +13,54 @@ jobs:
         id: release
         run: |
           VERSION="${{ github.event.release.tag_name }}"
-          # Strip leading 'v' if present
           VERSION_CLEAN="${VERSION#v}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_clean=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
 
-      - name: Download release binary and compute SHA256
+      # ✅ UPDATED STEP (compute both SHAs)
+      - name: Download release binaries and compute SHA256
         id: sha
         run: |
-          # Adjust the asset filename pattern to match your actual release asset
-          ASSET_URL="https://github.com/${{ github.repository }}/releases/download/${{ steps.release.outputs.version }}/nifectl_${{ steps.release.outputs.version_clean }}_darwin_amd64.tar.gz"
-          curl -sL "$ASSET_URL" -o nifectl.tar.gz
-          SHA256=$(sha256sum nifectl.tar.gz | awk '{print $1}')
-          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
-          echo "asset_url=${ASSET_URL}" >> $GITHUB_OUTPUT
+          VERSION="${{ steps.release.outputs.version }}"
+          VERSION_CLEAN="${{ steps.release.outputs.version_clean }}"
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/$VERSION"
+
+          # Darwin
+          DARWIN_URL="$BASE_URL/nifectl_${VERSION_CLEAN}_darwin_amd64.tar.gz"
+          curl -sL "$DARWIN_URL" -o darwin.tar.gz
+          DARWIN_SHA=$(sha256sum darwin.tar.gz | awk '{print $1}')
+
+          # Linux
+          LINUX_URL="$BASE_URL/nifectl_${VERSION_CLEAN}_linux_amd64.tar.gz"
+          curl -sL "$LINUX_URL" -o linux.tar.gz
+          LINUX_SHA=$(sha256sum linux.tar.gz | awk '{print $1}')
+
+          echo "darwin_sha=${DARWIN_SHA}" >> $GITHUB_OUTPUT
+          echo "linux_sha=${LINUX_SHA}" >> $GITHUB_OUTPUT
+          echo "darwin_url=${DARWIN_URL}" >> $GITHUB_OUTPUT
+          echo "linux_url=${LINUX_URL}" >> $GITHUB_OUTPUT
 
       - name: Checkout Homebrew tap repo
         uses: actions/checkout@v4
         with:
-          repository: nifetency/homebrew-tap   # 🔧 Replace with your Homebrew tap repo
+          repository: nifetency/homebrew-tap
           token: ${{ secrets.RELEASE_PAT }}
           path: homebrew-tap
 
+      # ✅ UPDATED STEP (update both mac + linux)
       - name: Update Homebrew formula
         run: |
-          FORMULA="homebrew-tap/Formula/nifectl.rb"   # 🔧 Adjust path to your formula file
+          FORMULA="homebrew-tap/Formula/nifectl.rb"
 
-          # Update version and sha256 and url in the formula
-          sed -i 's|url ".*"|url "${{ steps.sha.outputs.asset_url }}"|' "$FORMULA"
-          sed -i 's|sha256 ".*"|sha256 "${{ steps.sha.outputs.sha256 }}"|' "$FORMULA"
-          sed -i 's|version ".*"|version "${{ steps.release.outputs.version_clean }}"|' "$FORMULA"
+          # macOS
+          sed -i 's|url ".*darwin.*"|url "${{ steps.sha.outputs.darwin_url }}"|' "$FORMULA"
+          sed -i 's|sha256 ".*darwin.*"|sha256 "${{ steps.sha.outputs.darwin_sha }}"|' "$FORMULA"
 
-      - name: Create Pull Request for Homebrew update
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.RELEASE_PAT }}
-          path: homebrew-tap
-          commit-message: "chore: update nifectl to ${{ steps.release.outputs.version }}"
-          branch: update-nifectl-${{ steps.release.outputs.version }}
-          title: "Update nifectl to ${{ steps.release.outputs.version }}"
-          body: "Automated update of Homebrew formula"
+          # Linux
+          sed -i 's|url ".*linux.*"|url "${{ steps.sha.outputs.linux_url }}"|' "$FORMULA"
+          sed -i 's|sha256 ".*linux.*"|sha256 "${{ steps.sha.outputs.linux_sha }}"|' "$FORMULA"
 
+      
   update-nife-io:
     name: Update nife.io Release Config
     runs-on: ubuntu-latest
@@ -71,7 +78,7 @@ jobs:
       - name: Checkout nife.io repo
         uses: actions/checkout@v4
         with:
-          repository: nifetency/nife.io   # 🔧 Replace with your nife.io repo
+          repository: nifetency/nife.io
           token: ${{ secrets.RELEASE_PAT }}
           path: nife-io
 
@@ -99,5 +106,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add releases/index.json
-          git commit -m "chore: update nifectl release to ${{ steps.release.outputs.version }}"
+          git commit -m "chore: update nifectl release to ${{ steps.release.outputs.version }}" || echo "No changes"
           git push

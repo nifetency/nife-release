@@ -8,37 +8,63 @@ jobs:
   update-homebrew-tap:
     name: Update Homebrew Tap Formula
     runs-on: ubuntu-latest
+
     steps:
       - name: Get release info
         id: release
         run: |
           VERSION="${{ github.event.release.tag_name }}"
           VERSION_CLEAN="${VERSION#v}"
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_clean=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
 
-      # ✅ UPDATED STEP (compute both SHAs)
       - name: Download release binaries and compute SHA256
         id: sha
         run: |
           VERSION="${{ steps.release.outputs.version }}"
-          VERSION_CLEAN="${{ steps.release.outputs.version_clean }}"
-          BASE_URL="https://github.com/${{ github.repository }}/releases/download/$VERSION"
 
-          # Darwin
-          DARWIN_URL="$BASE_URL/nifectl_${VERSION_CLEAN}_darwin_amd64.tar.gz"
-          curl -sL "$DARWIN_URL" -o darwin.tar.gz
-          DARWIN_SHA=$(sha256sum darwin.tar.gz | awk '{print $1}')
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
 
-          # Linux
-          LINUX_URL="$BASE_URL/nifectl_${VERSION_CLEAN}_linux_amd64.tar.gz"
-          curl -sL "$LINUX_URL" -o linux.tar.gz
-          LINUX_SHA=$(sha256sum linux.tar.gz | awk '{print $1}')
+          #
+          # macOS Intel
+          #
+          MAC_INTEL_URL="${BASE_URL}/nifectl-darwin-amd64.tar.gz"
+          curl -sL "$MAC_INTEL_URL" -o mac-intel.tar.gz
+          MAC_INTEL_SHA=$(sha256sum mac-intel.tar.gz | awk '{print $1}')
 
-          echo "darwin_sha=${DARWIN_SHA}" >> $GITHUB_OUTPUT
-          echo "linux_sha=${LINUX_SHA}" >> $GITHUB_OUTPUT
-          echo "darwin_url=${DARWIN_URL}" >> $GITHUB_OUTPUT
-          echo "linux_url=${LINUX_URL}" >> $GITHUB_OUTPUT
+          #
+          # macOS ARM (same amd64 binary)
+          #
+          MAC_ARM_URL="${BASE_URL}/nifectl-darwin-amd64.tar.gz"
+          curl -sL "$MAC_ARM_URL" -o mac-arm.tar.gz
+          MAC_ARM_SHA=$(sha256sum mac-arm.tar.gz | awk '{print $1}')
+
+          #
+          # Linux Intel (386)
+          #
+          LINUX_386_URL="${BASE_URL}/nifectl-linux-386.tar.gz"
+          curl -sL "$LINUX_386_URL" -o linux-386.tar.gz
+          LINUX_386_SHA=$(sha256sum linux-386.tar.gz | awk '{print $1}')
+
+          #
+          # Linux ARM64 (using amd64 binary as requested)
+          #
+          LINUX_ARM64_URL="${BASE_URL}/nifectl-linux-amd64.tar.gz"
+          curl -sL "$LINUX_ARM64_URL" -o linux-arm64.tar.gz
+          LINUX_ARM64_SHA=$(sha256sum linux-arm64.tar.gz | awk '{print $1}')
+
+          echo "mac_intel_url=${MAC_INTEL_URL}" >> $GITHUB_OUTPUT
+          echo "mac_intel_sha=${MAC_INTEL_SHA}" >> $GITHUB_OUTPUT
+
+          echo "mac_arm_url=${MAC_ARM_URL}" >> $GITHUB_OUTPUT
+          echo "mac_arm_sha=${MAC_ARM_SHA}" >> $GITHUB_OUTPUT
+
+          echo "linux_386_url=${LINUX_386_URL}" >> $GITHUB_OUTPUT
+          echo "linux_386_sha=${LINUX_386_SHA}" >> $GITHUB_OUTPUT
+
+          echo "linux_arm64_url=${LINUX_ARM64_URL}" >> $GITHUB_OUTPUT
+          echo "linux_arm64_sha=${LINUX_ARM64_SHA}" >> $GITHUB_OUTPUT
 
       - name: Checkout Homebrew tap repo
         uses: actions/checkout@v4
@@ -47,23 +73,75 @@ jobs:
           token: ${{ secrets.RELEASE_PAT }}
           path: homebrew-tap
 
-      # ✅ UPDATED STEP (update both mac + linux)
       - name: Update Homebrew formula
         run: |
           FORMULA="homebrew-tap/Formula/nifectl.rb"
 
-          # macOS
-          sed -i 's|url ".*darwin.*"|url "${{ steps.sha.outputs.darwin_url }}"|' "$FORMULA"
-          sed -i 's|sha256 ".*darwin.*"|sha256 "${{ steps.sha.outputs.darwin_sha }}"|' "$FORMULA"
+          #
+          # Update version
+          #
+          sed -i 's|version ".*"|version "${{ steps.release.outputs.version_clean }}"|' "$FORMULA"
 
-          # Linux
-          sed -i 's|url ".*linux.*"|url "${{ steps.sha.outputs.linux_url }}"|' "$FORMULA"
-          sed -i 's|sha256 ".*linux.*"|sha256 "${{ steps.sha.outputs.linux_sha }}"|' "$FORMULA"
+          #
+          # macOS Intel
+          #
+          sed -i '/on_macos do/,/if Hardware::CPU.arm?/ {
+            /if Hardware::CPU.intel?/,+2 s|url ".*"|url "${{ steps.sha.outputs.mac_intel_url }}"|
+          }' "$FORMULA"
 
-      
+          sed -i '/on_macos do/,/if Hardware::CPU.arm?/ {
+            /if Hardware::CPU.intel?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.mac_intel_sha }}"|
+          }' "$FORMULA"
+
+          #
+          # macOS ARM
+          #
+          sed -i '/if Hardware::CPU.arm?/,+2 s|url ".*"|url "${{ steps.sha.outputs.mac_arm_url }}"|' "$FORMULA"
+
+          sed -i '/if Hardware::CPU.arm?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.mac_arm_sha }}"|' "$FORMULA"
+
+          #
+          # Linux Intel (386)
+          #
+          sed -i '/on_linux do/,/if Hardware::CPU.arm?/ {
+            /if Hardware::CPU.intel?/,+2 s|url ".*"|url "${{ steps.sha.outputs.linux_386_url }}"|
+          }' "$FORMULA"
+
+          sed -i '/on_linux do/,/if Hardware::CPU.arm?/ {
+            /if Hardware::CPU.intel?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.linux_386_sha }}"|
+          }' "$FORMULA"
+
+          #
+          # Linux ARM64
+          #
+          sed -i '/if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?/,+2 s|url ".*"|url "${{ steps.sha.outputs.linux_arm64_url }}"|' "$FORMULA"
+
+          sed -i '/if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.linux_arm64_sha }}"|' "$FORMULA"
+
+          #
+          # Fix test block
+          #
+          sed -i 's|system "#{sbin}/nifectl version"|system "#{bin}/nifectl", "version"|' "$FORMULA"
+
+          echo "Updated Formula:"
+          cat "$FORMULA"
+
+      - name: Commit and push Homebrew formula update
+        working-directory: homebrew-tap
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add Formula/nifectl.rb
+
+          git commit -m "chore: update nifectl to ${{ steps.release.outputs.version }}" || echo "No changes"
+
+          git push
+
   update-nife-io:
-    name: Update nife.io Release Config
+    name: Update nife.io Release Metadata
     runs-on: ubuntu-latest
+
     steps:
       - name: Get release info
         id: release
@@ -71,6 +149,7 @@ jobs:
           VERSION="${{ github.event.release.tag_name }}"
           VERSION_CLEAN="${VERSION#v}"
           RELEASE_DATE=$(date -u +"%Y-%m-%d")
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "version_clean=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
           echo "release_date=${RELEASE_DATE}" >> $GITHUB_OUTPUT
@@ -82,29 +161,70 @@ jobs:
           token: ${{ secrets.RELEASE_PAT }}
           path: nife-io
 
-      - name: Update release config/index file
+      - name: Update release metadata and latest links
         run: |
-          CONFIG_FILE="nife-io/releases/index.json"
+          VERSION="${{ steps.release.outputs.version }}"
+          VERSION_CLEAN="${{ steps.release.outputs.version_clean }}"
 
-          # ✅ Ensure directory exists
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
+
+          #
+          # Main release metadata
+          #
           mkdir -p nife-io/releases
 
-          cat > "$CONFIG_FILE" <<EOF
+          cat > nife-io/releases/index.json <<EOF
           {
-            "latest": "${{ steps.release.outputs.version_clean }}",
-            "version": "${{ steps.release.outputs.version_clean }}",
-            "tag": "${{ steps.release.outputs.version }}",
+            "latest": "${VERSION_CLEAN}",
+            "version": "${VERSION_CLEAN}",
+            "tag": "${VERSION}",
             "release_date": "${{ steps.release.outputs.release_date }}",
-            "release_url": "https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.version }}",
+            "release_url": "https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
             "changelog": "${{ github.event.release.html_url }}"
           }
           EOF
 
-      - name: Commit and push nife.io release config update
+          #
+          # Linux
+          #
+          mkdir -p nife-io/release/linux/x64
+          echo "${BASE_URL}/nifectl-linux-amd64.tar.gz" > nife-io/release/linux/x64/latest
+
+          mkdir -p nife-io/release/linux/x86_64
+          echo "${BASE_URL}/nifectl-linux-386.tar.gz" > nife-io/release/linux/x86_64/latest
+
+          #
+          # Windows
+          #
+          mkdir -p nife-io/release/windows/x64
+          echo "${BASE_URL}/nifectl-windows-amd64.zip" > nife-io/release/windows/x64/latest
+
+          mkdir -p nife-io/release/windows/x86_64
+          echo "${BASE_URL}/nifectl-windows-386.zip" > nife-io/release/windows/x86_64/latest
+
+          #
+          # Darwin/macOS
+          #
+          mkdir -p nife-io/release/darwin/x64
+          echo "${BASE_URL}/nifectl-darwin-amd64.tar.gz" > nife-io/release/darwin/x64/latest
+
+          mkdir -p nife-io/release/darwin/x86_64
+          echo "${BASE_URL}/nifectl-darwin-amd64.tar.gz" > nife-io/release/darwin/x86_64/latest
+
+          mkdir -p nife-io/release/darwin/arm64
+          echo "${BASE_URL}/nifectl-darwin-amd64.tar.gz" > nife-io/release/darwin/arm64/latest
+
+          echo "Updated release files:"
+          find nife-io/release -type f | sort
+
+      - name: Commit and push nife.io release updates
         working-directory: nife-io
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add releases/index.json
+
+          git add releases/index.json release/
+
           git commit -m "chore: update nifectl release to ${{ steps.release.outputs.version }}" || echo "No changes"
+
           git push

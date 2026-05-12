@@ -27,44 +27,34 @@ jobs:
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
 
           #
-          # macOS Intel
+          # macOS amd64
           #
-          MAC_INTEL_URL="${BASE_URL}/nifectl-darwin-amd64.tar.gz"
-          curl -sL "$MAC_INTEL_URL" -o mac-intel.tar.gz
-          MAC_INTEL_SHA=$(sha256sum mac-intel.tar.gz | awk '{print $1}')
+          MAC_URL="${BASE_URL}/nifectl-darwin-amd64.tar.gz"
+          curl -sL "$MAC_URL" -o mac.tar.gz
+          MAC_SHA=$(sha256sum mac.tar.gz | awk '{print $1}')
 
           #
-          # macOS ARM (same amd64 binary)
-          #
-          MAC_ARM_URL="${BASE_URL}/nifectl-darwin-amd64.tar.gz"
-          curl -sL "$MAC_ARM_URL" -o mac-arm.tar.gz
-          MAC_ARM_SHA=$(sha256sum mac-arm.tar.gz | awk '{print $1}')
-
-          #
-          # Linux Intel (386)
+          # Linux 386
           #
           LINUX_386_URL="${BASE_URL}/nifectl-linux-386.tar.gz"
           curl -sL "$LINUX_386_URL" -o linux-386.tar.gz
           LINUX_386_SHA=$(sha256sum linux-386.tar.gz | awk '{print $1}')
 
           #
-          # Linux ARM64 (using amd64 binary as requested)
+          # Linux amd64
           #
-          LINUX_ARM64_URL="${BASE_URL}/nifectl-linux-amd64.tar.gz"
-          curl -sL "$LINUX_ARM64_URL" -o linux-arm64.tar.gz
-          LINUX_ARM64_SHA=$(sha256sum linux-arm64.tar.gz | awk '{print $1}')
+          LINUX_AMD64_URL="${BASE_URL}/nifectl-linux-amd64.tar.gz"
+          curl -sL "$LINUX_AMD64_URL" -o linux-amd64.tar.gz
+          LINUX_AMD64_SHA=$(sha256sum linux-amd64.tar.gz | awk '{print $1}')
 
-          echo "mac_intel_url=${MAC_INTEL_URL}" >> $GITHUB_OUTPUT
-          echo "mac_intel_sha=${MAC_INTEL_SHA}" >> $GITHUB_OUTPUT
-
-          echo "mac_arm_url=${MAC_ARM_URL}" >> $GITHUB_OUTPUT
-          echo "mac_arm_sha=${MAC_ARM_SHA}" >> $GITHUB_OUTPUT
+          echo "mac_url=${MAC_URL}" >> $GITHUB_OUTPUT
+          echo "mac_sha=${MAC_SHA}" >> $GITHUB_OUTPUT
 
           echo "linux_386_url=${LINUX_386_URL}" >> $GITHUB_OUTPUT
           echo "linux_386_sha=${LINUX_386_SHA}" >> $GITHUB_OUTPUT
 
-          echo "linux_arm64_url=${LINUX_ARM64_URL}" >> $GITHUB_OUTPUT
-          echo "linux_arm64_sha=${LINUX_ARM64_SHA}" >> $GITHUB_OUTPUT
+          echo "linux_amd64_url=${LINUX_AMD64_URL}" >> $GITHUB_OUTPUT
+          echo "linux_amd64_sha=${LINUX_AMD64_SHA}" >> $GITHUB_OUTPUT
 
       - name: Checkout Homebrew tap repo
         uses: actions/checkout@v4
@@ -85,38 +75,74 @@ jobs:
           #
           # macOS Intel
           #
-          sed -i '/on_macos do/,/if Hardware::CPU.arm?/ {
-            /if Hardware::CPU.intel?/,+2 s|url ".*"|url "${{ steps.sha.outputs.mac_intel_url }}"|
-          }' "$FORMULA"
+          awk '
+          /if Hardware::CPU.intel\?/ && in_macos == 1 {
+            print
+            getline
+            print "      url \"${{ steps.sha.outputs.mac_url }}\""
+            getline
+            print "      sha256 \"${{ steps.sha.outputs.mac_sha }}\""
+            next
+          }
 
-          sed -i '/on_macos do/,/if Hardware::CPU.arm?/ {
-            /if Hardware::CPU.intel?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.mac_intel_sha }}"|
-          }' "$FORMULA"
+          /on_macos do/ { in_macos=1 }
+          /on_linux do/ { in_macos=0 }
+
+          { print }
+          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
 
           #
           # macOS ARM
           #
-          sed -i '/if Hardware::CPU.arm?/,+2 s|url ".*"|url "${{ steps.sha.outputs.mac_arm_url }}"|' "$FORMULA"
+          awk '
+          /if Hardware::CPU.arm\?/ && in_macos == 1 {
+            print
+            getline
+            print "      url \"${{ steps.sha.outputs.mac_url }}\""
+            getline
+            print "      sha256 \"${{ steps.sha.outputs.mac_sha }}\""
+            next
+          }
 
-          sed -i '/if Hardware::CPU.arm?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.mac_arm_sha }}"|' "$FORMULA"
+          /on_macos do/ { in_macos=1 }
+          /on_linux do/ { in_macos=0 }
+
+          { print }
+          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
 
           #
           # Linux Intel (386)
           #
-          sed -i '/on_linux do/,/if Hardware::CPU.arm?/ {
-            /if Hardware::CPU.intel?/,+2 s|url ".*"|url "${{ steps.sha.outputs.linux_386_url }}"|
-          }' "$FORMULA"
+          awk '
+          /if Hardware::CPU.intel\?/ && in_linux == 1 {
+            print
+            getline
+            print "      url \"${{ steps.sha.outputs.linux_386_url }}\""
+            getline
+            print "      sha256 \"${{ steps.sha.outputs.linux_386_sha }}\""
+            next
+          }
 
-          sed -i '/on_linux do/,/if Hardware::CPU.arm?/ {
-            /if Hardware::CPU.intel?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.linux_386_sha }}"|
-          }' "$FORMULA"
+          /on_linux do/ { in_linux=1 }
+
+          { print }
+          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
 
           #
           # Linux ARM64
           #
-          sed -i '/if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?/,+2 s|url ".*"|url "${{ steps.sha.outputs.linux_arm64_url }}"|' "$FORMULA"
+          awk '
+          /if Hardware::CPU.arm\? && Hardware::CPU.is_64_bit\?/ {
+            print
+            getline
+            print "      url \"${{ steps.sha.outputs.linux_amd64_url }}\""
+            getline
+            print "      sha256 \"${{ steps.sha.outputs.linux_amd64_sha }}\""
+            next
+          }
 
-          sed -i '/if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?/,+2 s|sha256 ".*"|sha256 "${{ steps.sha.outputs.linux_arm64_sha }}"|' "$FORMULA"
+          { print }
+          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
 
           #
           # Fix test block
@@ -169,7 +195,7 @@ jobs:
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
 
           #
-          # Main release metadata
+          # Main metadata
           #
           mkdir -p nife-io/releases
 

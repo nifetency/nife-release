@@ -63,93 +63,54 @@ jobs:
           token: ${{ secrets.RELEASE_PAT }}
           path: homebrew-tap
 
-      - name: Update Homebrew formula
+      - name: Generate Homebrew formula
         run: |
           FORMULA="homebrew-tap/Formula/nifectl.rb"
 
-          #
-          # Update version
-          #
-          sed -i 's|version ".*"|version "${{ steps.release.outputs.version_clean }}"|' "$FORMULA"
+          cat > "$FORMULA" <<EOF
+          # This file was generated automatically. DO NOT EDIT.
+          class Nifectl < Formula
+            desc "Deploys, manages and scales applications"
+            homepage "https://www.nife.io"
+            version "${{ steps.release.outputs.version_clean }}"
+            license "MIT"
 
-          #
-          # macOS Intel
-          #
-          awk '
-          /if Hardware::CPU.intel\?/ && in_macos == 1 {
-            print
-            getline
-            print "      url \"${{ steps.sha.outputs.mac_url }}\""
-            getline
-            print "      sha256 \"${{ steps.sha.outputs.mac_sha }}\""
-            next
-          }
+            on_macos do
+              if Hardware::CPU.intel?
+                url "${{ steps.sha.outputs.mac_url }}"
+                sha256 "${{ steps.sha.outputs.mac_sha }}"
+              end
 
-          /on_macos do/ { in_macos=1 }
-          /on_linux do/ { in_macos=0 }
+              if Hardware::CPU.arm?
+                url "${{ steps.sha.outputs.mac_url }}"
+                sha256 "${{ steps.sha.outputs.mac_sha }}"
+              end
+            end
 
-          { print }
-          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
+            on_linux do
+              if Hardware::CPU.intel?
+                url "${{ steps.sha.outputs.linux_386_url }}"
+                sha256 "${{ steps.sha.outputs.linux_386_sha }}"
+              end
 
-          #
-          # macOS ARM
-          #
-          awk '
-          /if Hardware::CPU.arm\?/ && in_macos == 1 {
-            print
-            getline
-            print "      url \"${{ steps.sha.outputs.mac_url }}\""
-            getline
-            print "      sha256 \"${{ steps.sha.outputs.mac_sha }}\""
-            next
-          }
+              if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
+                url "${{ steps.sha.outputs.linux_amd64_url }}"
+                sha256 "${{ steps.sha.outputs.linux_amd64_sha }}"
+              end
+            end
 
-          /on_macos do/ { in_macos=1 }
-          /on_linux do/ { in_macos=0 }
+            def install
+              bin.install "nifectl"
+              bin.install_symlink "nifectl" => "nife"
+            end
 
-          { print }
-          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
+            test do
+              system "#{bin}/nifectl", "version"
+            end
+          end
+          EOF
 
-          #
-          # Linux Intel (386)
-          #
-          awk '
-          /if Hardware::CPU.intel\?/ && in_linux == 1 {
-            print
-            getline
-            print "      url \"${{ steps.sha.outputs.linux_386_url }}\""
-            getline
-            print "      sha256 \"${{ steps.sha.outputs.linux_386_sha }}\""
-            next
-          }
-
-          /on_linux do/ { in_linux=1 }
-
-          { print }
-          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
-
-          #
-          # Linux ARM64
-          #
-          awk '
-          /if Hardware::CPU.arm\? && Hardware::CPU.is_64_bit\?/ {
-            print
-            getline
-            print "      url \"${{ steps.sha.outputs.linux_amd64_url }}\""
-            getline
-            print "      sha256 \"${{ steps.sha.outputs.linux_amd64_sha }}\""
-            next
-          }
-
-          { print }
-          ' "$FORMULA" > tmp && mv tmp "$FORMULA"
-
-          #
-          # Fix test block
-          #
-          sed -i 's|system "#{sbin}/nifectl version"|system "#{bin}/nifectl", "version"|' "$FORMULA"
-
-          echo "Updated Formula:"
+          echo "Generated Formula:"
           cat "$FORMULA"
 
       - name: Commit and push Homebrew formula update
@@ -195,7 +156,7 @@ jobs:
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
 
           #
-          # Main metadata
+          # Main metadata JSON
           #
           mkdir -p nife-io/releases
 

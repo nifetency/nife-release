@@ -1,0 +1,15 @@
+name: Auto-label by changed files
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  labeler:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          configuration-path: .github/labeler.yml
+          sync-labels: true

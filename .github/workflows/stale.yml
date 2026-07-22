@@ -1,0 +1,24 @@
+name: Stale PR flagging
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch: {}
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 14
+          days-before-close: -1
+          stale-pr-label: 'stale'
+          stale-issue-label: 'stale'
+          only-pr-labels: ''
+          exempt-pr-labels: 'pinned,security'
+          stale-pr-message: 'This PR has had no activity for 14 days. Marking as stale for visibility - it will not be auto-closed.'
+          stale-issue-message: 'This issue has had no activity for 14 days. Marking as stale for visibility - it will not be auto-closed.'
+          days-before-issue-close: -1
+          remove-stale-when-updated: true

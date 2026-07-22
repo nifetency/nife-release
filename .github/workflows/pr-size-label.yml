@@ -1,0 +1,32 @@
+name: PR size label
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  size-label:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Apply size label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          ADDITIONS: ${{ github.event.pull_request.additions }}
+          DELETIONS: ${{ github.event.pull_request.deletions }}
+          REPO: ${{ github.repository }}
+        run: |
+          TOTAL=$((ADDITIONS + DELETIONS))
+          if [ "$TOTAL" -lt 10 ]; then LABEL="size/XS"
+          elif [ "$TOTAL" -lt 30 ]; then LABEL="size/S"
+          elif [ "$TOTAL" -lt 100 ]; then LABEL="size/M"
+          elif [ "$TOTAL" -lt 500 ]; then LABEL="size/L"
+          else LABEL="size/XL"
+          fi
+
+          for l in size/XS size/S size/M size/L size/XL; do
+            if [ "$l" != "$LABEL" ]; then
+              gh pr edit "$PR_NUMBER" --repo "$REPO" --remove-label "$l" 2>/dev/null || true
+            fi
+          done
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$LABEL"

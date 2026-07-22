@@ -4,11 +4,48 @@ on:
     types: [opened]
   pull_request:
     types: [opened]
+  pull_request_review:
+    types: [submitted, dismissed]
 jobs:
   add-to-project:
+    if: github.event_name != 'pull_request_review'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/orgs/nifetency/projects/2
           github-token: ${{ secrets.PROJECT_AUTOMATION_TOKEN }}
+  update-review-status:
+    if: github.event_name == 'pull_request_review'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update review status field on project
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_AUTOMATION_TOKEN }}
+        run: |
+          PR_NODE_ID="${{ github.event.pull_request.node_id }}"
+          PROJECT_ID="PVT_kwDOBAALrM4AK71Y"
+          FIELD_ID="PVTSSF_lADOBAALrM4AK71YzhYklEw"
+
+          DECISION=$(gh api graphql -f query='
+            query($id: ID!) { node(id: $id) { ... on PullRequest { reviewDecision } } }
+          ' -f id="$PR_NODE_ID" --jq '.data.node.reviewDecision')
+
+          case "$DECISION" in
+            APPROVED) OPTION_ID="84b241fd" ;;
+            CHANGES_REQUESTED) OPTION_ID="190b9b99" ;;
+            REVIEW_REQUIRED) OPTION_ID="1f51f9f9" ;;
+            *) OPTION_ID="893081a3" ;;
+          esac
+
+          ITEM_ID=$(gh api graphql -f query='
+            mutation($projectId: ID!, $contentId: ID!) {
+              addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) { item { id } }
+            }
+          ' -f projectId="$PROJECT_ID" -f contentId="$PR_NODE_ID" --jq '.data.addProjectV2ItemById.item.id')
+
+          gh api graphql -f query='
+            mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+              updateProjectV2ItemFieldValue(input: {projectId: $projectId, itemId: $itemId, fieldId: $fieldId, value: {singleSelectOptionId: $optionId}}) { projectV2Item { id } }
+            }
+          ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" -f fieldId="$FIELD_ID" -f optionId="$OPTION_ID"

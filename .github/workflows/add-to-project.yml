@@ -51,18 +51,6 @@ jobs:
               updateProjectV2ItemFieldValue(input: {projectId: $projectId, itemId: $itemId, fieldId: $fieldId, value: {singleSelectOptionId: $optionId}}) { projectV2Item { id } }
             }
           ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" -f fieldId="$FIELD_ID" -f optionId="$OPTION_ID"
-  update-release-tracker:
-    if: github.event_name == 'release'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update release tracker on project
-        env:
-          GH_TOKEN: ${{ secrets.PROJECT_AUTOMATION_TOKEN }}
-        run: |
-          TAG="${{ github.event.release.tag_name }}"
-          RELEASE_DATE="${{ github.event.release.published_at }}"
-          DATE_ONLY=$(echo "$RELEASE_DATE" | cut -dT -f1)
-
           gh api graphql -f query='
             mutation($itemId: ID!, $fieldId: ID!, $value: String!) {
               updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4AK71Y", itemId: $itemId, fieldId: $fieldId, value: {text: $value}}) { projectV2Item { id } }
@@ -74,3 +62,26 @@ jobs:
               updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4AK71Y", itemId: $itemId, fieldId: $fieldId, value: {date: $value}}) { projectV2Item { id } }
             }
           ' -f itemId="PVTI_lADOBAALrM4AK71YzgztCJU" -f fieldId="PVTF_lADOBAALrM4AK71YzhYkpA0" -F value="$DATE_ONLY"
+  update-release-tracker:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update release tracker on Releases project
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_AUTOMATION_TOKEN }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          RELEASE_DATE="${{ github.event.release.published_at }}"
+          DATE_ONLY=$(echo "$RELEASE_DATE" | cut -dT -f1)
+
+          gh api graphql -f query='
+            mutation($itemId: ID!, $fieldId: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4BeIJX", itemId: $itemId, fieldId: $fieldId, value: {text: $value}}) { projectV2Item { id } }
+            }
+          ' -f itemId="PVTI_lADOBAALrM4BeIJXzgztDzc" -f fieldId="PVTF_lADOBAALrM4BeIJXzhYkqJ0" -f value="$TAG"
+
+          gh api graphql -f query='
+            mutation($itemId: ID!, $fieldId: ID!, $value: Date!) {
+              updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4BeIJX", itemId: $itemId, fieldId: $fieldId, value: {date: $value}}) { projectV2Item { id } }
+            }
+          ' -f itemId="PVTI_lADOBAALrM4BeIJXzgztDzc" -f fieldId="PVTF_lADOBAALrM4BeIJXzhYkqJ4" -F value="$DATE_ONLY"

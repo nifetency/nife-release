@@ -1,0 +1,57 @@
+"area: frontend":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.tsx'
+      - '**/*.jsx'
+      - '**/*.css'
+      - '**/*.scss'
+      - 'src/components/**'
+      - 'frontend/**'
+      - 'public/**'
+
+"area: backend":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.go'
+      - '**/*.py'
+      - 'server/**'
+      - 'backend/**'
+      - 'api/**'
+      - 'cmd/**'
+      - 'internal/**'
+
+"area: docs":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**'
+
+"area: ci":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**'
+      - '**/Dockerfile'
+      - '**/*.yml'
+      - '**/*.yaml'
+
+"area: dependencies":
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'go.mod'
+      - 'go.sum'
+      - 'requirements.txt'
+      - 'Gemfile'
+      - 'Gemfile.lock'
+
+"area: tests":
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*_test.go'
+      - '**/*.test.js'
+      - '**/*.test.tsx'
+      - '**/*.spec.js'
+      - 'test/**'
+      - 'tests/**'
+      - '**/test_*.py'

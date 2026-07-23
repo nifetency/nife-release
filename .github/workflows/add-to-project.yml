@@ -85,3 +85,15 @@ jobs:
               updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4BeIJX", itemId: $itemId, fieldId: $fieldId, value: {date: $value}}) { projectV2Item { id } }
             }
           ' -f itemId="PVTI_lADOBAALrM4BeIJXzgztDzc" -f fieldId="PVTF_lADOBAALrM4BeIJXzhYkqJ4" -F value="$DATE_ONLY"
+
+  notify-slack:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post release to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\":rocket: *${{ github.event.repository.name }}* released *${{ github.event.release.tag_name }}*\n<${{ github.event.release.html_url }}|View release notes>\"}" \
+            "$SLACK_WEBHOOK_URL"

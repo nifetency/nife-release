@@ -10,10 +10,10 @@ on:
     types: [published]
 jobs:
   add-to-project:
-    if: github.event_name != 'pull_request_review'
+    if: github.event_name == 'issues' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/add-to-project@v1.0.2
+      - uses: actions/add-to-project@v2
         with:
           project-url: https://github.com/orgs/nifetency/projects/2
           github-token: ${{ secrets.PROJECT_AUTOMATION_TOKEN }}
@@ -51,17 +51,7 @@ jobs:
               updateProjectV2ItemFieldValue(input: {projectId: $projectId, itemId: $itemId, fieldId: $fieldId, value: {singleSelectOptionId: $optionId}}) { projectV2Item { id } }
             }
           ' -f projectId="$PROJECT_ID" -f itemId="$ITEM_ID" -f fieldId="$FIELD_ID" -f optionId="$OPTION_ID"
-          gh api graphql -f query='
-            mutation($itemId: ID!, $fieldId: ID!, $value: String!) {
-              updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4AK71Y", itemId: $itemId, fieldId: $fieldId, value: {text: $value}}) { projectV2Item { id } }
-            }
-          ' -f itemId="PVTI_lADOBAALrM4AK71YzgztCJU" -f fieldId="PVTF_lADOBAALrM4AK71YzhYkpAw" -f value="$TAG"
-
-          gh api graphql -f query='
-            mutation($itemId: ID!, $fieldId: ID!, $value: Date!) {
-              updateProjectV2ItemFieldValue(input: {projectId: "PVT_kwDOBAALrM4AK71Y", itemId: $itemId, fieldId: $fieldId, value: {date: $value}}) { projectV2Item { id } }
-            }
-          ' -f itemId="PVTI_lADOBAALrM4AK71YzgztCJU" -f fieldId="PVTF_lADOBAALrM4AK71YzhYkpA0" -F value="$DATE_ONLY"
+          
   update-release-tracker:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
